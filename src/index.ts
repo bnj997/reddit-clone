@@ -7,6 +7,10 @@ import {ApolloServer} from 'apollo-server-express'
 import {buildSchema} from 'type-graphql';
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from './resolvers/user';
+import redis from 'redis';
+import session from 'express-session';
+import connectRedis from 'connect-redis'
+
 
 const main = async () => {
   //connect to database
@@ -19,6 +23,17 @@ const main = async () => {
   orm.getMigrator().up();
 
   const app = express();
+
+  const RedisStore = connectRedis(session)
+  const redisClient = redis.createClient()
+  
+  app.use(
+    session({
+      store: new RedisStore({ client: redisClient }),
+      secret: 'keyboard cat',
+      resave: false,
+    })
+  )
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
