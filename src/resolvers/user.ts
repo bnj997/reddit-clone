@@ -34,12 +34,25 @@ class UserResponse {
 @Resolver()
 export class UserResolver {
 
+  //Get current User
+  @Query(() => User, {nullable: true})
+  async getCurrentUser (
+    @Ctx() { req, em }: MyContext
+  ) {
+    //you are not logged in 
+    if(!req.session!.userId) {
+      return null
+    }
+    const user = await em.findOne(User, {id: req.session!.userId})
+    return user
+  }
+
 
   //Register User
   @Mutation(() => UserResponse)
   async registerUser(
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
-    @Ctx() {em}: MyContext
+    @Ctx() {req, em}: MyContext
   ): Promise<UserResponse> {
 
     if (options.username.length < 2) {
@@ -78,14 +91,14 @@ export class UserResolver {
           errors: [
             {
               field: "username",
-              message: "username already taken"
+              message: "username already taken",
             },
           ],
         }
       }
-      
-
     }
+
+    req.session!.userId = user.id; 
     
     return {
       user,
@@ -96,7 +109,7 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async loginUser(
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
-    @Ctx() {em}: MyContext
+    @Ctx() {em, req}: MyContext
   ): Promise<UserResponse> {
     const user = await em.findOne(User, {username: options.username})
 
@@ -117,11 +130,13 @@ export class UserResolver {
         errors: [
           {
             field: "password",
-            message: "Incorrect password"
+            message: "Incorrect passwords"
           },
         ],
       };
     }
+
+    req.session!.userId = user.id; 
 
     return {
       user,
