@@ -3,17 +3,27 @@ import {Formik, Form} from 'formik'
 import { FormControl, FormLabel, Input, FormErrorMessage, Box, Button } from '@chakra-ui/core';
 import { Wrapper } from '../components/Wrapper';
 import { InputField } from '../components/InputField';
+import { useRegisterMutation } from '../generated/graphql';
+import { toErrorMap } from '../utils/toErrorMap';
+import { useRouter } from "next/router"
 
 interface registerProps {}
 
 //In nextjs, name of file becomes a route which you can search with url
 const Register: React.FC<registerProps> = ({}) => {
+  const router = useRouter();
+  const [, registerUser] = useRegisterMutation();
   return (
     <Wrapper variant="small">
       <Formik 
         initialValues={{username: "", password: ""}}
-        onSubmit={(values) => {
-          console.log(values)
+        onSubmit={async (values, {setErrors}) => {
+          const response = await registerUser(values)
+          if (response.data?.registerUser.errors) {
+            setErrors(toErrorMap(response.data.registerUser.errors))
+          } else if (response.data.registerUser.user) {
+            router.push('/')
+          }
         }}
       >
         {({isSubmitting, values, handleChange}) => (
