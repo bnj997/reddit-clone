@@ -10,7 +10,7 @@ import { UserResolver } from './resolvers/user';
 import redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis'
-import { MyContext } from './types';
+import cors from 'cors'
 
 
 const main = async () => {
@@ -27,6 +27,13 @@ const main = async () => {
 
   const RedisStore = connectRedis(session)
   const redisClient = redis.createClient()
+
+  app.use(
+    cors({
+      origin: "http://localhost:3000",
+      credentials: true,
+    })
+  );
   
   app.use(
     session({
@@ -36,10 +43,10 @@ const main = async () => {
         disableTouch: true,
       }),
       cookie: {
-        maxAge: 1000 * 60 * 60 * 24,
+        maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
         httpOnly: true,
         sameSite: "lax", //csrf
-        secure: false //cookie only works in https
+        secure: false,
       },
       saveUninitialized: false,
       secret: "meepmoopboom",
@@ -52,15 +59,20 @@ const main = async () => {
       resolvers: [PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({req, res}): MyContext => ({em: orm.em, req, res})
+    context: ({req, res}) => ({em: orm.em, req, res})
   });
 
   //create graphql endpoint for us in express
-  apolloServer.applyMiddleware({app});
+  apolloServer.applyMiddleware({
+    app,
+    cors: false,
+  });
 
   app.listen(4000, () => {
     console.log('server started at localhost:4000')
   });
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+});

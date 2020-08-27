@@ -1,7 +1,8 @@
-import { Resolver, Query, Ctx, Int, Arg, Mutation, InputType, Field, ObjectType } from "type-graphql";
+import { Resolver, Query, Ctx, Arg, Mutation, InputType, Field, ObjectType } from "type-graphql";
 import { User } from "../entities/User";
 import argon2 from 'argon2';
 import { MyContext } from "src/types";
+import { EntityManager } from '@mikro-orm/postgresql'
 
 // Input types are used for argumenets
 @InputType()
@@ -41,10 +42,10 @@ export class UserResolver {
   ) {
     console.log("session: ", req.session)
     //you are not logged in 
-    if(!req.session!.userId) {
+    if(!req.session.userId) {
       return null
     }
-    const user = await em.findOne(User, {id: req.session!.userId})
+    const user = await em.findOne(User, {id: req.session.userId})
     return user
   }
 
@@ -53,7 +54,7 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async registerUser(
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
-    @Ctx() {req, em}: MyContext
+    @Ctx() {em, req}: MyContext
   ): Promise<UserResponse> {
 
     if (options.username.length < 2) {
@@ -61,7 +62,7 @@ export class UserResolver {
         errors: [
           {
             field: "username",
-            message: "length must be greater than 2"
+            message: "Length must be greater than 2"
           },
         ],
       }
@@ -72,38 +73,44 @@ export class UserResolver {
         errors: [
           {
             field: "password",
-            message: "length must be greater than 5"
+            message: "Length must be greater than 5"
           },
         ],
       }
     }
 
     const hashedPassword = await argon2.hash(options.password)
-    const user = em.create(User, {
-      username: options.username, 
-      password: hashedPassword 
-    });
+    let user;
     try {
-      await em.persistAndFlush(user);
+      //Not using mikroorm to insert since using Knex, so need to add in own created at and update at fields
+      //use underscores for created at and update at since thats what database uses
+      const result = await (em as EntityManager)
+        .createQueryBuilder(User)
+        .getKnexQuery()
+        .insert({
+          username: options.username, 
+          password: hashedPassword ,
+          created_at: new Date(),
+          updated_at: new Date(),
+        }).returning("*");
+      user = result[0];
     } catch(err){
-      //duplicate username error
-      if (err.code === "23505") {
+      console.log(err)
+      if (err.code === "23505" ) {
         return {
           errors: [
             {
               field: "username",
-              message: "username already taken",
+              message: "Username already taken",
             },
           ],
         }
       }
     }
 
-    req.session!.userId = user.id; 
+    req.session.userId = user.id;
     
-    return {
-      user,
-    };
+    return {user};
   }
 
   //Login User
@@ -131,19 +138,14 @@ export class UserResolver {
         errors: [
           {
             field: "password",
-            message: "Incorrect passwords"
+            message: "Incorrect password"
           },
         ],
       };
     }
 
-    req.session!.userId = user.id; 
+    req.session.userId = user.id;
 
-    return {
-      user,
-    };
-
+    return {user};
   }
-
-
 }

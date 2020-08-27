@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"-@^0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/-/-/--0.0.1.tgz#db6db7cd866142880dd03e5b8781d1b4fac0e5bd"
+  integrity sha512-3HfneK3DGAm05fpyj20sT3apkNcvPpCuccOThOPdzz8sY7GgQGe0l93XH9bt+YzibcTIgUAIMoyVJI740RtgyQ==
+
 "@apollo/protobufjs@^1.0.3":
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/@apollo/protobufjs/-/protobufjs-1.0.5.tgz#a78b726147efc0795e74c8cb8a11aafc6e02f773"
@@ -269,7 +274,7 @@
     "@types/keygrip" "*"
     "@types/node" "*"
 
-"@types/cors@^2.8.4":
+"@types/cors@^2.8.4", "@types/cors@^2.8.7":
   version "2.8.7"
   resolved "https://registry.yarnpkg.com/@types/cors/-/cors-2.8.7.tgz#ab2f47f1cba93bce27dfd3639b006cc0e5600889"
   integrity sha512-sOdDRU3oRS7LBNTIqwDkPJyq0lpHYcbMTt0TrjzsXbk/e37hcLTH6eZX7CdbDeN0yJJvzw9hFBZkbtCSbk/jAQ==
@@ -452,6 +457,11 @@
   integrity sha512-mwEVBDUVODlsQQ5dfuLUS5/Tf7jqUKyhKYHmVi4fPB6bDMOfWvUPJmKgS1Z7Za/sOI3vzWt4+O7yCiL/70MogA==
   dependencies:
     tslib "^1.9.3"
+
+D@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/D/-/D-1.0.0.tgz#c348a4e034f72847be51206fc530fc089e9cc2a9"
+  integrity sha512-nQvrCBu7K2pSSEtIM0EEF03FVjcczCXInMt3moLNFbjlWx6bZrX72uT6/1uAXDbnzGUAx9gTyDiQ+vrFi663oA==
 
 abbrev@1:
   version "1.1.1"
@@ -1201,7 +1211,7 @@ core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
 
-cors@^2.8.4:
+cors@^2.8.4, cors@^2.8.5:
   version "2.8.5"
   resolved "https://registry.yarnpkg.com/cors/-/cors-2.8.5.tgz#eac11da51592dd86b9f06f6e7ac293b3df875d29"
   integrity sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g==
