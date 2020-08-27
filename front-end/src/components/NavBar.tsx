@@ -2,6 +2,7 @@ import React from 'react'
 import { Box, Flex, Link, Button } from '@chakra-ui/core';
 import NextLink from "next/link";
 import { useGetCurrentUserQuery, useLogoutMutation } from "../generated/graphql"
+import { isServer } from '../utils/isServer';
 
 interface NavBarProps {
 
@@ -9,7 +10,13 @@ interface NavBarProps {
 
 export const NavBar: React.FC<NavBarProps> = ({}) => {
   const [{fetching: logoutFetching},logout] = useLogoutMutation();
-  const [{data, fetching}] = useGetCurrentUserQuery()
+
+  //this request should not run when server side rendering of the index page is occuring. It should only occur on client side
+  //
+  const [{data, fetching}] = useGetCurrentUserQuery({
+    pause: isServer(),
+  })
+
   let body = null
 
   //data is loading
