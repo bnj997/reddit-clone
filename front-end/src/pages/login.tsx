@@ -3,25 +3,24 @@ import {Formik, Form} from 'formik'
 import { FormControl, FormLabel, Input, FormErrorMessage, Box, Button } from '@chakra-ui/core';
 import { Wrapper } from '../components/Wrapper';
 import { InputField } from '../components/InputField';
-import { useRegisterMutation } from '../generated/graphql';
+import { useLoginMutation } from '../generated/graphql';
 import { toErrorMap } from '../utils/toErrorMap';
 import { useRouter } from "next/router"
 
-interface registerProps {}
 
 //In nextjs, name of file becomes a route which you can search with url
-const Register: React.FC<registerProps> = ({}) => {
+const Login: React.FC<{}> = ({}) => {
   const router = useRouter();
-  const [, registerUser] = useRegisterMutation();
+  const [, loginUser] = useLoginMutation();
   return (
     <Wrapper variant="small">
       <Formik 
         initialValues={{username: "", password: ""}}
         onSubmit={async (values, {setErrors}) => {
-          const response = await registerUser(values)
-          if (response.data?.registerUser.errors) {
-            setErrors(toErrorMap(response.data.registerUser.errors))
-          } else if (response.data?.registerUser.user) {
+          const response = await loginUser(values)
+          if (response.data?.loginUser.errors) {
+            setErrors(toErrorMap(response.data.loginUser.errors))
+          } else if (response.data?.loginUser.user) {
             router.push('/')
           }
         }}
@@ -47,7 +46,7 @@ const Register: React.FC<registerProps> = ({}) => {
               isLoading={isSubmitting}
               variantColor="teal"
             >
-              Register
+              Login
             </Button>
           </Form>
         )}
@@ -56,4 +55,4 @@ const Register: React.FC<registerProps> = ({}) => {
   );;
 }
 
-export default Register
+export default Login;
