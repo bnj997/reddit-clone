@@ -132,6 +132,17 @@ export type RegisterMutation = (
   ) }
 );
 
+export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetCurrentUserQuery = (
+  { __typename?: 'Query' }
+  & { getCurrentUser?: Maybe<(
+    { __typename?: 'User' }
+    & Pick<User, 'id' | 'username'>
+  )> }
+);
+
 
 export const LoginDocument = gql`
     mutation Login($username: String!, $password: String!) {
@@ -168,4 +179,16 @@ export const RegisterDocument = gql`
 
 export function useRegisterMutation() {
   return Urql.useMutation<RegisterMutation, RegisterMutationVariables>(RegisterDocument);
+};
+export const GetCurrentUserDocument = gql`
+    query getCurrentUser {
+  getCurrentUser {
+    id
+    username
+  }
+}
+    `;
+
+export function useGetCurrentUserQuery(options: Omit<Urql.UseQueryArgs<GetCurrentUserQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<GetCurrentUserQuery>({ query: GetCurrentUserDocument, ...options });
 };
