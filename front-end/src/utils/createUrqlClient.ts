@@ -13,6 +13,7 @@ function betterUpdateQuery<Result, Query>(
 
 
 export const createUrqlClient = (ssrExchange: any) => ({
+  //this url corresponds to our GraphQL API Server
   url: "http://localhost:4000/graphql",
   fetchOptions: {
     credentials: "include" as const,

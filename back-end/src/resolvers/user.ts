@@ -1,3 +1,5 @@
+//All of the queries that you can run as part of your API
+
 import { Resolver, Query, Ctx, Arg, Mutation, InputType, Field, ObjectType } from "type-graphql";
 import { User } from "../entities/User";
 import argon2 from 'argon2';
@@ -5,15 +7,29 @@ import { MyContext } from "src/types";
 import { EntityManager } from '@mikro-orm/postgresql'
 import { COOKIE_NAME } from "../constants";
 
-// Input types are used for argumenets
+// Input types are used for arguments
 @InputType()
 class UsernamePasswordInput {
-  @Field()
+  @Field(()=> String)
   username: string
-  @Field()
+  @Field(()=> String)
   password: string
 }
 
+
+
+
+//Object types we return from mutation
+//Want user returned if it worked properly OR I want error returned if error is present
+@ObjectType()
+class UserResponse {
+  @Field(()=> [FieldError], {nullable: true})
+  //? just in case no errors
+  errors?: FieldError[]
+  @Field(()=> User, {nullable: true})
+  //? just in case no users
+  user?: User
+}
 //Done if there is soemthing wrong in a particular field
 @ObjectType()
 class FieldError {
@@ -23,15 +39,7 @@ class FieldError {
   message: string;
 }
 
-//Object types we return from mutation
-//Want user returned if it worked properly OR I want error returned if error is present
-@ObjectType()
-class UserResponse {
-  @Field(()=> [FieldError], {nullable: true})
-  errors?: FieldError[]
-  @Field(()=> User, {nullable: true})
-  user?: User
-}
+
 
 @Resolver()
 export class UserResolver {
@@ -54,6 +62,8 @@ export class UserResolver {
   //Register User
   @Mutation(() => UserResponse)
   async registerUser(
+    //removes the need to make multiple @Args
+    //Basically allows you to create multiple fields using one @Args
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
     @Ctx() {em, req}: MyContext
   ): Promise<UserResponse> {
@@ -80,6 +90,8 @@ export class UserResolver {
       }
     }
 
+
+    //Just hashes the password using argon2
     const hashedPassword = await argon2.hash(options.password)
     let user;
     try {
@@ -117,6 +129,7 @@ export class UserResolver {
   //Login User
   @Mutation(() => UserResponse)
   async loginUser(
+    //UsernamePasswordInput is an object {username: "", password: ""}
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
     @Ctx() {em, req}: MyContext
   ): Promise<UserResponse> {
