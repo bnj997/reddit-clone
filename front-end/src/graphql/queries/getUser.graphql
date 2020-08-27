@@ -1,6 +1,5 @@
 query getCurrentUser {
   getCurrentUser {
-    id
-    username
+    ...RegularUser
   }
 }
