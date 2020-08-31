@@ -1,7 +1,16 @@
 //Bunch of queiries and mutations used to fetch or update POSTS
-
-import { Resolver, Query, Int, Arg, Mutation } from "type-graphql";
+import { Resolver, Query, Int, Arg, Mutation, InputType, Field, Ctx, UseMiddleware } from "type-graphql";
 import { Post } from "../entities/Post";
+import { MyContext } from "src/types";
+import { isAuth } from "src/middleware/isAuth";
+
+@InputType()
+class PostInput {
+  @Field()
+  title: string
+  @Field()
+  text: string
+}
 
 @Resolver()
 export class PostResolver {
@@ -33,11 +42,18 @@ export class PostResolver {
 
   //Create Post
   @Mutation(() => Post)
+  //this middleware will check if we have user id within the session before it actually runs the resolver
+  @UseMiddleware(isAuth)
   async createPost(
     //"title", () => String  --> represents the graphql type
     //title: stringr --> represents the typescript type
-    @Arg("title", () => String) title: string): Promise<Post> {
-    return Post.create({title}).save();
+    @Arg("options", () => String) input: PostInput,
+    @Ctx() {req}: MyContext
+    ): Promise<Post> {
+    return Post.create({
+      ...input,
+      creatorId: req.session.userId,
+    }).save();
   }
 
   //Update Post

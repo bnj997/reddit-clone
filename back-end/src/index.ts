@@ -29,7 +29,7 @@ const main = async () => {
   //CREATES CONNECTION TO DATABASE and initialises with  correct config using the microConfig file
   //This file contains dbName, type of database, username and password to ensure secure connection to database
   //Note: To create new table, go to microconfig table and add in a new entity then run mikro-orm migration:create
-  //
+
 
   //Run migrations on each server restart
   //Migrations ensure that the entities we made match to what is currently in the database and updates it accordingly.
