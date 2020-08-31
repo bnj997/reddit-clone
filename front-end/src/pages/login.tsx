@@ -1,6 +1,6 @@
 import React from 'react'
-import {Formik, Form} from 'formik'
-import { FormControl, FormLabel, Input, FormErrorMessage, Box, Button } from '@chakra-ui/core';
+import { Formik, Form } from 'formik'
+import { Box, Button, Link, Flex } from '@chakra-ui/core';
 import { Wrapper } from '../components/Wrapper';
 import { InputField } from '../components/InputField';
 import { useLoginMutation } from '../generated/graphql';
@@ -8,6 +8,7 @@ import { toErrorMap } from '../utils/toErrorMap';
 import { useRouter } from "next/router"
 import { withUrqlClient } from 'next-urql';
 import { createUrqlClient } from '../utils/createUrqlClient';
+import NextLink from 'next/link' 
 
 
 //In nextjs, name of file becomes a route which you can search with url
@@ -19,12 +20,12 @@ const Login: React.FC<{}> = ({}) => {
       <Formik 
         initialValues={{usernameOrEmail: "", password: ""}}
         onSubmit={async (values, {setErrors}) => {
-          // const response = await loginUser(values)
-          // if (response.data?.loginUser.errors) {
-          //   setErrors(toErrorMap(response.data.loginUser.errors))
-          // } else if (response.data?.loginUser.user) {
-          //   router.push('/')
-          // }
+          const response = await loginUser(values)
+          if (response.data?.loginUser.errors) {
+            setErrors(toErrorMap(response.data.loginUser.errors))
+          } else if (response.data?.loginUser.user) {
+            router.push('/')
+          }
         }}
       >
         {({isSubmitting}) => (
@@ -42,6 +43,13 @@ const Login: React.FC<{}> = ({}) => {
                 type="password"
               />
             </Box>
+            <Flex mt={2}>
+              <Box>
+                <NextLink href="/forgot-password">
+                  <Link ml="auto"> Forgot Password </Link>
+                </NextLink>
+              </Box>
+            </Flex>
             <Button 
               mt={4}
               type="submit"
