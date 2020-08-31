@@ -24,9 +24,9 @@ const Register: React.FC<registerProps> = ({}) => {
   return (
     <Wrapper variant="small">
       <Formik 
-        initialValues={{username: "", password: ""}}
+        initialValues={{username: "", email: "", password: ""}}
         onSubmit={async (values, {setErrors}) => {
-          const response = await registerUser(values)
+          const response = await registerUser({options: values})
           if (response.data?.registerUser.errors) {
             //Formik handles errors as an array of objects, but we just want to access as a map of key values pairs.
             //the key will be the field, and the value will be the message
@@ -46,6 +46,13 @@ const Register: React.FC<registerProps> = ({}) => {
               placeholder="username"
               label="Username"
             />
+            <Box mt={4} >
+              <InputField
+                name="email"
+                placeholder="email"
+                label="Email"
+              />
+            </Box>
             <Box mt={4} >
               <InputField
                 name="password"

@@ -28,7 +28,7 @@ export const validateRegister = (options: UsernamePasswordInput ) => {
     ]
   }
 
-  if (options.email.includes('@')) {
+  if (!options.email.includes('@')) {
     return [
       {
         field: "email",
