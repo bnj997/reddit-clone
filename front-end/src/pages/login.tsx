@@ -19,12 +19,12 @@ const Login: React.FC<{}> = ({}) => {
       <Formik 
         initialValues={{usernameOrEmail: "", password: ""}}
         onSubmit={async (values, {setErrors}) => {
-          const response = await loginUser(values)
-          if (response.data?.loginUser.errors) {
-            setErrors(toErrorMap(response.data.loginUser.errors))
-          } else if (response.data?.loginUser.user) {
-            router.push('/')
-          }
+          // const response = await loginUser(values)
+          // if (response.data?.loginUser.errors) {
+          //   setErrors(toErrorMap(response.data.loginUser.errors))
+          // } else if (response.data?.loginUser.user) {
+          //   router.push('/')
+          // }
         }}
       >
         {({isSubmitting}) => (
@@ -54,7 +54,7 @@ const Login: React.FC<{}> = ({}) => {
         )}
       </Formik>
     </Wrapper>
-  );;
+  );
 }
 
 //we do not have dynamic content so no need to server side render

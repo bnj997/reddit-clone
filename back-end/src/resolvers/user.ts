@@ -1,6 +1,6 @@
 //All of the queries that you can run as part of your API
 
-import { Resolver, Query, Ctx, Arg, Mutation, Field, ObjectType } from "type-graphql";
+import { Resolver, Query, Ctx, Arg, Mutation, Field, ObjectType, Args } from "type-graphql";
 import { User } from "../entities/User";
 import argon2 from 'argon2';
 import { MyContext } from "src/types";
@@ -10,6 +10,7 @@ import { UsernamePasswordInput } from "./UsernamePasswordInput";
 import { validateRegister } from "../utils/validateRegister";
 import { sendEmail } from "../utils/sendEmail";
 import {v4} from 'uuid';
+import { createGzip } from "zlib";
 
 //Object types we return from mutation
 //Want user returned if it worked properly OR I want error returned if error is present
@@ -35,6 +36,63 @@ class FieldError {
 
 @Resolver()
 export class UserResolver {
+
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg('token') token: string,
+    @Arg('newPassword') newPassword: string,
+    @Ctx() {redis, em, req}: MyContext
+  ): Promise<UserResponse> {
+    if (newPassword.length < 5) {
+      return { 
+        errors: [
+          {
+            field: "newPassword",
+            message: "Length must be greater than 5"
+          },
+        ]
+      }
+    }
+
+    const key = FORGET_PASSWORD_PREFIX+token
+    const userId = await redis.get(key)
+    if (!userId) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "Token expired"
+          },
+        ]
+      }
+    }
+
+    //Update user password if all g
+    const user = await em.findOne(User, {id: parseInt(userId) });
+    if(!user) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "User no longer exists"
+          },
+        ]
+      };
+    }
+
+    user.password = await argon2.hash(newPassword)
+    await em.persistAndFlush(user);
+
+    await redis.del(key)
+
+    //login user after change password
+    //remove if you want them to re log in
+    req.session.userId = user.id
+
+    return { user };
+  }
+
+
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg('email') email: string,
