@@ -1,6 +1,6 @@
 import React, { HtmlHTMLAttributes } from 'react'
 import { useField } from 'formik';
-import { FormControl, FormLabel, Input, FormErrorMessage } from '@chakra-ui/core';
+import { FormControl, FormLabel, Input, FormErrorMessage, Textarea } from '@chakra-ui/core';
 
 //Want to make type of Inputfield to be  React.InputHTMLAttributes<HTMLInputElement>
 //Want custom InputField component to take in props that a regular input field would take
@@ -9,6 +9,7 @@ type InputFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   name: string;
   placeholder: string;
+  textarea?: boolean
 }
 
 //we celare our InputField will be of type InpuitFieldProps which takes in any field regular field takes and also ensures label, name and placeholder must be included
@@ -18,9 +19,14 @@ export const InputField: React.FC<InputFieldProps> = ({
   //This is because we dont want the {...props} we pass in <Input> to include "label" since <Input> does not accept a label attribute. 
   //We need the "label" for the <FormLabel> attribute
   label, 
+  textarea,
   size: _,
   ...props 
 }) => {
+  let TextType = Input
+  if (textarea) {
+    TextType = Textarea
+  }
   //"props" will contain info we pass in InputField component
   //"field" will contain info about name, onBlur, onChange value, checked and multiple.
   //useField hook involves passing in the props and using the value of those props as fields
@@ -30,7 +36,7 @@ export const InputField: React.FC<InputFieldProps> = ({
     //empty string is a false while a string with values is true
     <FormControl isInvalid={!!error}>
       <FormLabel htmlFor={field.name}>{label}</FormLabel>
-      <Input 
+      <TextType 
         //"...field" contains the values for "name" and "value", "onBlur" and  "onChange"
         {...field}
         //"...props" contains the value for ALL THE ATTRIBUTES (except label and size) you passed in within the component.
