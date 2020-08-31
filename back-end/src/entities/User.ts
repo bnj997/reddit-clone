@@ -27,6 +27,11 @@ export class User {
   @Property({type: 'text', unique: true})
   username!: string;
 
+  @Field(() => String)
+  //only want one person to have username. No one allowed to have duplicate
+  @Property({type: 'text', unique: true})
+  email!: string;
+
   //no field here because it is just database column - you cant query it/select it
   @Property({type: 'text' })
   password!: string;
