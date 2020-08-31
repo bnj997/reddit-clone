@@ -8,11 +8,11 @@ import { ApolloServer } from 'apollo-server-express'
 import { buildSchema } from 'type-graphql';
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from './resolvers/user';
-import redis from 'redis';
+import Redis from 'ioredis';
 import session from 'express-session';
 import connectRedis from 'connect-redis'
 import cors from 'cors'
-import { User } from './entities/User';
+
 
 
 const main = async () => {
@@ -39,7 +39,6 @@ const main = async () => {
 
   //Redis is in-memory database where we will store our sessions
   //This implements our REDIS CLIENT that will use our redis database
-  const redisClient = redis.createClient()
   
   //Sessions contain information about the user and in this case, we will store their userId
   //This line ensures that our sessions will be stored in redis
@@ -50,6 +49,7 @@ const main = async () => {
   // -> session id is then converted into user id. 
   // -> Ultimately, this enables the users cookie to tell server who the user id
   const RedisStore = connectRedis(session)
+  const redis = new Redis();
 
   //Prevent cors error by defining where the requests will be made from. It is originally a "*"
   //Now cors is applied to all routes.
@@ -70,7 +70,7 @@ const main = async () => {
       //aka. we store the sessions we made into redis
       store: new RedisStore({ 
         //tells session we will be storing it on this redis client
-        client: redisClient,
+        client: redis,
         //when data is stored in redis, we can say how long it should last in redis and usually we will keep session alive if user keeps interacting with session. Otherwise it will expire
         //In this case, just want to disable it for now so dont need to keep making request to redis
         disableTouch: true,
@@ -111,7 +111,7 @@ const main = async () => {
     //Can make the "orm.em" object accessible to all Resolvers through variable "em" so they can do crud operations via mikroORM
     //To access sessions inside our resolvers, pass in the the request and response to our context. 
     //Express allows us to access these req, res objects through context function
-    context: ({req, res}) => ({em: orm.em, req, res})
+    context: ({req, res}) => ({em: orm.em, req, res, redis})
   });
 
 

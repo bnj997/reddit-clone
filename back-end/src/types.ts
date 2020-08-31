@@ -1,5 +1,6 @@
 import { EntityManager, IDatabaseDriver, Connection } from "@mikro-orm/core";
 import {Request, Response} from 'express'
+import { Redis } from "ioredis";
 
 //This context type must suit the orms.em type.
 //This is why we are ensuring the type of 'em" is EntityManager<any> & EntityManager<IDatabaseDriver<Connection>>
@@ -8,5 +9,6 @@ import {Request, Response} from 'express'
 export type MyContext = {
   em: EntityManager<any> & EntityManager<IDatabaseDriver<Connection>>;
   req: Request & { session: Express.Session };
+  redis: Redis;
   res: Response;
 };
