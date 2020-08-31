@@ -65,6 +65,7 @@ export class UserResolver {
     //removes the need to make multiple @Args
     //Basically allows you to create multiple fields using one @Args
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
+    //context has the req object which is used to access sessions
     @Ctx() {em, req}: MyContext
   ): Promise<UserResponse> {
 
@@ -106,6 +107,7 @@ export class UserResolver {
           created_at: new Date(),
           updated_at: new Date(),
         }).returning("*");
+      //result[0] refers to the actual user
       user = result[0];
     } catch(err){
       console.log(err)
@@ -121,8 +123,11 @@ export class UserResolver {
       }
     }
 
+    //can store the userid in the session object which is part of the request object
     req.session.userId = user.id;
+
     
+    //Need to put user in {} because we are returning a UserResponse Object which contains both user and error
     return {user};
   }
 
@@ -165,15 +170,18 @@ export class UserResolver {
 
   @Mutation(() => Boolean)
   logoutUser(@Ctx() {req, res}: MyContext) {
+    //runs this callback function which aims to destroy session
     return new Promise(resolve => 
       req.session.destroy(err => {
+        //clear cookie from clients browser
         res.clearCookie(COOKIE_NAME);
         if (err) {
           console.log(err)
+          //return false if error
           resolve(false)
           return
         }
-
+        //return true if error
         resolve(true);
       })
     );

@@ -57,4 +57,6 @@ const Login: React.FC<{}> = ({}) => {
   );;
 }
 
+//we do not have dynamic content so no need to server side render
+//still need urqlclient since we have mutations
 export default withUrqlClient(createUrqlClient)(Login);

@@ -1,12 +1,14 @@
 import { Box } from '@chakra-ui/core';
 
+//Interface is where you can dictate which props can be passed in to prevent random props being passed in
 interface WrapperProps {
+  //variant? just in case no prop is passed so you declare a default version
   variant?: 'small' | 'regular'
 }
 
 export const Wrapper: React.FC<WrapperProps> = ({ 
   children, 
-  variant='regular' 
+  variant = 'regular', 
 }) => {
   return (
     <Box 

@@ -4,15 +4,17 @@ import NextLink from "next/link";
 import { useGetCurrentUserQuery, useLogoutMutation } from "../generated/graphql"
 import { isServer } from '../utils/isServer';
 
-interface NavBarProps {
-
-}
+interface NavBarProps {}
 
 export const NavBar: React.FC<NavBarProps> = ({}) => {
-  const [{fetching: logoutFetching},logout] = useLogoutMutation();
+  //use fetching to show if currently fetching
+  //casting fetching to logoutFetching since conflict with "fetching" found in useGetCurrentUserQuery
+  //Using uqls useMutation returns 2 things
+  // -> first contains {fetching, errors and data}
+  // -> second contains the actual query we want to execute
+  const [{fetching: logoutFetching} ,logout] = useLogoutMutation();
 
-  //this request should not run when server side rendering of the index page is occuring. It should only occur on client side
-  //
+  //This request should not run when server side rendering of the index page is occuring. It should only occur on client side rendering
   const [{data, fetching}] = useGetCurrentUserQuery({
     pause: isServer(),
   })
