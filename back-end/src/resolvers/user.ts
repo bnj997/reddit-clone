@@ -1,16 +1,14 @@
 //All of the queries that you can run as part of your API
-
-import { Resolver, Query, Ctx, Arg, Mutation, Field, ObjectType, Args } from "type-graphql";
+import { Resolver, Query, Ctx, Arg, Mutation, Field, ObjectType } from "type-graphql";
 import { User } from "../entities/User";
-import argon2 from 'argon2';
 import { MyContext } from "src/types";
-import { EntityManager } from '@mikro-orm/postgresql'
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
 import { validateRegister } from "../utils/validateRegister";
 import { sendEmail } from "../utils/sendEmail";
-import {v4} from 'uuid';
-import { createGzip } from "zlib";
+import { v4 } from 'uuid';
+import argon2 from 'argon2';
+import { getConnection } from "typeorm";
 
 //Object types we return from mutation
 //Want user returned if it worked properly OR I want error returned if error is present
@@ -33,7 +31,6 @@ class FieldError {
 }
 
 
-
 @Resolver()
 export class UserResolver {
 
@@ -41,7 +38,7 @@ export class UserResolver {
   async changePassword(
     @Arg('token') token: string,
     @Arg('newPassword') newPassword: string,
-    @Ctx() {redis, em, req}: MyContext
+    @Ctx() {redis, req}: MyContext
   ): Promise<UserResponse> {
     if (newPassword.length < 5) {
       return { 
@@ -68,7 +65,8 @@ export class UserResolver {
     }
 
     //Update user password if all g
-    const user = await em.findOne(User, {id: parseInt(userId) });
+    const userIdNum = parseInt(userId)
+    const user = await User.findOne(userIdNum);
     if(!user) {
       return {
         errors: [
@@ -81,7 +79,10 @@ export class UserResolver {
     }
 
     user.password = await argon2.hash(newPassword)
-    await em.persistAndFlush(user);
+    await User.update(
+      { id: userIdNum }, 
+      { password: await argon2.hash(newPassword) }
+    );
 
     await redis.del(key)
 
@@ -96,9 +97,10 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg('email') email: string,
-    @Ctx() {em, redis}: MyContext
+    @Ctx() {redis}: MyContext
   ) {
-    const user = await em.findOne(User, {email});
+    //cant just use findOne since not searchibg by primary key so need to include the where keyword
+    const user = await User.findOne({where: {email}});
     if (!user) {
       //email not in database and return true to not tell user that this email was not found
       return true;
@@ -125,16 +127,12 @@ export class UserResolver {
 
   //Get current User
   @Query(() => User, {nullable: true})
-  async getCurrentUser (
-    @Ctx() { req, em }: MyContext
-  ) {
-    console.log("session: ", req.session)
+  getCurrentUser (@Ctx() { req }: MyContext) {
     //you are not logged in 
     if(!req.session.userId) {
       return null
     }
-    const user = await em.findOne(User, {id: req.session.userId})
-    return user
+    return User.findOne(req.session.userId)
   }
 
 
@@ -145,7 +143,7 @@ export class UserResolver {
     //Basically allows you to create multiple fields using one @Args
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
     //context has the req object which is used to access sessions
-    @Ctx() {em, req}: MyContext
+    @Ctx() {req}: MyContext
   ): Promise<UserResponse> {
     const errors = validateRegister(options);
     if (errors) {
@@ -156,22 +154,29 @@ export class UserResolver {
     const hashedPassword = await argon2.hash(options.password)
     let user;
     try {
-      //Not using mikroorm to insert since using Knex, so need to add in own created at and update at fields
-      //use underscores for created at and update at since thats what database uses
-      const result = await (em as EntityManager)
-        .createQueryBuilder(User)
-        .getKnexQuery()
-        .insert({
+      // user = User.create({
+      //   username: options.username, 
+      //   email: options.email,
+      //   password: hashedPassword 
+      // }).save()
+
+      const result = await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
           username: options.username, 
           email: options.email,
-          password: hashedPassword ,
-          created_at: new Date(),
-          updated_at: new Date(),
-        }).returning("*");
-      //result[0] refers to the actual user
-      user = result[0];
+          password: hashedPassword 
+        })
+        .returning('*')
+        .execute();
+      //gets the result of the query and put in a user variable
+      // console.log(result)
+      user = result.raw[0];
+      // console.log(user)
     } catch(err){
-      console.log(err)
+      console.log("Error: ", err)
       if (err.code === "23505" ) {
         return {
           errors: [
@@ -198,12 +203,12 @@ export class UserResolver {
     //enable users to input their username or email
     @Arg("usernameOrEmail") usernameOrEmail: string,
     @Arg("password") password: string,
-    @Ctx() {em, req}: MyContext
+    @Ctx() {req}: MyContext
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, 
+    const user = await User.findOne(
       usernameOrEmail.includes('@') 
-      ? {email: usernameOrEmail}
-      : {username: usernameOrEmail}
+        ? {where: {email: usernameOrEmail}}
+        : {where: {username: usernameOrEmail}}
     );
     if (!user) {
       return {
