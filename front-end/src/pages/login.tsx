@@ -1,6 +1,6 @@
 import React from 'react'
-import {Formik, Form} from 'formik'
-import { FormControl, FormLabel, Input, FormErrorMessage, Box, Button } from '@chakra-ui/core';
+import { Formik, Form } from 'formik'
+import { Box, Button, Link, Flex } from '@chakra-ui/core';
 import { Wrapper } from '../components/Wrapper';
 import { InputField } from '../components/InputField';
 import { useLoginMutation } from '../generated/graphql';
@@ -8,6 +8,7 @@ import { toErrorMap } from '../utils/toErrorMap';
 import { useRouter } from "next/router"
 import { withUrqlClient } from 'next-urql';
 import { createUrqlClient } from '../utils/createUrqlClient';
+import NextLink from 'next/link' 
 
 
 //In nextjs, name of file becomes a route which you can search with url
@@ -17,7 +18,7 @@ const Login: React.FC<{}> = ({}) => {
   return (
     <Wrapper variant="small">
       <Formik 
-        initialValues={{username: "", password: ""}}
+        initialValues={{usernameOrEmail: "", password: ""}}
         onSubmit={async (values, {setErrors}) => {
           const response = await loginUser(values)
           if (response.data?.loginUser.errors) {
@@ -30,9 +31,9 @@ const Login: React.FC<{}> = ({}) => {
         {({isSubmitting}) => (
           <Form>
             <InputField
-              name="username"
-              placeholder="username"
-              label="Username"
+              name="usernameOrEmail"
+              placeholder="username or email"
+              label="Username or Email"
             />
             <Box mt={4} >
               <InputField
@@ -42,6 +43,13 @@ const Login: React.FC<{}> = ({}) => {
                 type="password"
               />
             </Box>
+            <Flex mt={2}>
+              <Box>
+                <NextLink href="/forgot-password">
+                  <Link ml="auto"> Forgot Password </Link>
+                </NextLink>
+              </Box>
+            </Flex>
             <Button 
               mt={4}
               type="submit"
@@ -54,7 +62,7 @@ const Login: React.FC<{}> = ({}) => {
         )}
       </Formik>
     </Wrapper>
-  );;
+  );
 }
 
 //we do not have dynamic content so no need to server side render

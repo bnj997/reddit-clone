@@ -1,24 +1,35 @@
 //Required for type graphql to work
 import 'reflect-metadata';
-import { MikroORM } from "@mikro-orm/core";
 import { __prod__, COOKIE_NAME } from "./constants";
-import microConfig from "./mikro-orm.config";
 import express from 'express'
 import { ApolloServer } from 'apollo-server-express'
 import { buildSchema } from 'type-graphql';
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from './resolvers/user';
-import redis from 'redis';
+import Redis from 'ioredis';
 import session from 'express-session';
 import connectRedis from 'connect-redis'
 import cors from 'cors'
+import { createConnection } from 'typeorm';
+import { Post } from './entities/Post';
+import { User } from './entities/User';
+
 
 
 const main = async () => {
+  const conn = await createConnection({
+    type: 'postgres',
+    database: 'lireddit2',
+    username: 'postgres',
+    password: 'postgres',
+    logging: true,
+    synchronize: true,
+    entities: [Post, User]
+  })
   //CREATES CONNECTION TO DATABASE and initialises with  correct config using the microConfig file
   //This file contains dbName, type of database, username and password to ensure secure connection to database
   //Note: To create new table, go to microconfig table and add in a new entity then run mikro-orm migration:create
-  const orm = await MikroORM.init(microConfig);
+  //
 
   //Run migrations on each server restart
   //Migrations ensure that the entities we made match to what is currently in the database and updates it accordingly.
@@ -26,7 +37,7 @@ const main = async () => {
   //Note: "up()" builds the SQL from what database was before in previous migration and updates it to the current migration. Aka - runs any new migrations we made with create()
   //Note: MikroORM compares the entities with database and may find that an entity you coded is exactly what it is in database so migrations files could be empty
   //Does not run old migrations - mikroORM makes own table in postgresSQL and keeps track of which migration has run and has not run
-  orm.getMigrator().up();
+  //
 
 
   //Express is just the server we will be using
@@ -38,7 +49,6 @@ const main = async () => {
 
   //Redis is in-memory database where we will store our sessions
   //This implements our REDIS CLIENT that will use our redis database
-  const redisClient = redis.createClient()
   
   //Sessions contain information about the user and in this case, we will store their userId
   //This line ensures that our sessions will be stored in redis
@@ -49,6 +59,7 @@ const main = async () => {
   // -> session id is then converted into user id. 
   // -> Ultimately, this enables the users cookie to tell server who the user id
   const RedisStore = connectRedis(session)
+  const redis = new Redis();
 
   //Prevent cors error by defining where the requests will be made from. It is originally a "*"
   //Now cors is applied to all routes.
@@ -69,7 +80,7 @@ const main = async () => {
       //aka. we store the sessions we made into redis
       store: new RedisStore({ 
         //tells session we will be storing it on this redis client
-        client: redisClient,
+        client: redis,
         //when data is stored in redis, we can say how long it should last in redis and usually we will keep session alive if user keeps interacting with session. Otherwise it will expire
         //In this case, just want to disable it for now so dont need to keep making request to redis
         disableTouch: true,
@@ -110,7 +121,7 @@ const main = async () => {
     //Can make the "orm.em" object accessible to all Resolvers through variable "em" so they can do crud operations via mikroORM
     //To access sessions inside our resolvers, pass in the the request and response to our context. 
     //Express allows us to access these req, res objects through context function
-    context: ({req, res}) => ({em: orm.em, req, res})
+    context: ({req, res}) => ({req, res, redis})
   });
 
 

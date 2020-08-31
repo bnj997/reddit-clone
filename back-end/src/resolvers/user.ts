@@ -1,23 +1,14 @@
 //All of the queries that you can run as part of your API
-
-import { Resolver, Query, Ctx, Arg, Mutation, InputType, Field, ObjectType } from "type-graphql";
+import { Resolver, Query, Ctx, Arg, Mutation, Field, ObjectType } from "type-graphql";
 import { User } from "../entities/User";
-import argon2 from 'argon2';
 import { MyContext } from "src/types";
-import { EntityManager } from '@mikro-orm/postgresql'
-import { COOKIE_NAME } from "../constants";
-
-// Input types are used for arguments
-@InputType()
-class UsernamePasswordInput {
-  @Field(()=> String)
-  username: string
-  @Field(()=> String)
-  password: string
-}
-
-
-
+import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
+import { UsernamePasswordInput } from "./UsernamePasswordInput";
+import { validateRegister } from "../utils/validateRegister";
+import { sendEmail } from "../utils/sendEmail";
+import { v4 } from 'uuid';
+import argon2 from 'argon2';
+import { getConnection } from "typeorm";
 
 //Object types we return from mutation
 //Want user returned if it worked properly OR I want error returned if error is present
@@ -40,22 +31,108 @@ class FieldError {
 }
 
 
-
 @Resolver()
 export class UserResolver {
 
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg('token') token: string,
+    @Arg('newPassword') newPassword: string,
+    @Ctx() {redis, req}: MyContext
+  ): Promise<UserResponse> {
+    if (newPassword.length < 5) {
+      return { 
+        errors: [
+          {
+            field: "newPassword",
+            message: "Length must be greater than 5"
+          },
+        ]
+      }
+    }
+
+    const key = FORGET_PASSWORD_PREFIX+token
+    const userId = await redis.get(key)
+    if (!userId) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "Token expired"
+          },
+        ]
+      }
+    }
+
+    //Update user password if all g
+    const userIdNum = parseInt(userId)
+    const user = await User.findOne(userIdNum);
+    if(!user) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "User no longer exists"
+          },
+        ]
+      };
+    }
+
+    user.password = await argon2.hash(newPassword)
+    await User.update(
+      { id: userIdNum }, 
+      { password: await argon2.hash(newPassword) }
+    );
+
+    await redis.del(key)
+
+    //login user after change password
+    //remove if you want them to re log in
+    req.session.userId = user.id
+
+    return { user };
+  }
+
+
+  @Mutation(() => Boolean)
+  async forgotPassword(
+    @Arg('email') email: string,
+    @Ctx() {redis}: MyContext
+  ) {
+    //cant just use findOne since not searchibg by primary key so need to include the where keyword
+    const user = await User.findOne({where: {email}});
+    if (!user) {
+      //email not in database and return true to not tell user that this email was not found
+      return true;
+    }
+
+    //create token
+    const token = v4();
+    //store in edis
+    await redis.set(
+      FORGET_PASSWORD_PREFIX + token, 
+      user.id, 
+      'ex', 
+      1000 * 60 * 60 * 24 * 3
+    ); //3 days
+    
+    //whenever user changes password, they will send token to server and then will look up value to get their userid
+    await sendEmail(
+      email, 
+      `<a href="http://localhost:3000/change-password/${token}">reset password</a>`
+    )
+    
+    return true;
+  }
+
   //Get current User
   @Query(() => User, {nullable: true})
-  async getCurrentUser (
-    @Ctx() { req, em }: MyContext
-  ) {
-    console.log("session: ", req.session)
+  getCurrentUser (@Ctx() { req }: MyContext) {
     //you are not logged in 
     if(!req.session.userId) {
       return null
     }
-    const user = await em.findOne(User, {id: req.session.userId})
-    return user
+    return User.findOne(req.session.userId)
   }
 
 
@@ -66,51 +143,40 @@ export class UserResolver {
     //Basically allows you to create multiple fields using one @Args
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
     //context has the req object which is used to access sessions
-    @Ctx() {em, req}: MyContext
+    @Ctx() {req}: MyContext
   ): Promise<UserResponse> {
-
-    if (options.username.length < 2) {
-      return {
-        errors: [
-          {
-            field: "username",
-            message: "Length must be greater than 2"
-          },
-        ],
-      }
+    const errors = validateRegister(options);
+    if (errors) {
+      return {errors};
     }
-
-    if (options.password.length < 5) {
-      return {
-        errors: [
-          {
-            field: "password",
-            message: "Length must be greater than 5"
-          },
-        ],
-      }
-    }
-
 
     //Just hashes the password using argon2
     const hashedPassword = await argon2.hash(options.password)
     let user;
     try {
-      //Not using mikroorm to insert since using Knex, so need to add in own created at and update at fields
-      //use underscores for created at and update at since thats what database uses
-      const result = await (em as EntityManager)
-        .createQueryBuilder(User)
-        .getKnexQuery()
-        .insert({
+      // user = User.create({
+      //   username: options.username, 
+      //   email: options.email,
+      //   password: hashedPassword 
+      // }).save()
+
+      const result = await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
           username: options.username, 
-          password: hashedPassword ,
-          created_at: new Date(),
-          updated_at: new Date(),
-        }).returning("*");
-      //result[0] refers to the actual user
-      user = result[0];
+          email: options.email,
+          password: hashedPassword 
+        })
+        .returning('*')
+        .execute();
+      //gets the result of the query and put in a user variable
+      // console.log(result)
+      user = result.raw[0];
+      // console.log(user)
     } catch(err){
-      console.log(err)
+      console.log("Error: ", err)
       if (err.code === "23505" ) {
         return {
           errors: [
@@ -134,24 +200,28 @@ export class UserResolver {
   //Login User
   @Mutation(() => UserResponse)
   async loginUser(
-    //UsernamePasswordInput is an object {username: "", password: ""}
-    @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
-    @Ctx() {em, req}: MyContext
+    //enable users to input their username or email
+    @Arg("usernameOrEmail") usernameOrEmail: string,
+    @Arg("password") password: string,
+    @Ctx() {req}: MyContext
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, {username: options.username})
-
+    const user = await User.findOne(
+      usernameOrEmail.includes('@') 
+        ? {where: {email: usernameOrEmail}}
+        : {where: {username: usernameOrEmail}}
+    );
     if (!user) {
       return {
         errors: [
           {
-            field: "username",
+            field: "usernameOrEmail",
             message: "Username does not exist"
           },
         ],
       };
     }
 
-    const valid = await argon2.verify(user.password, options.password)
+    const valid = await argon2.verify(user.password, password)
     if (!valid) {
       return {
         errors: [
