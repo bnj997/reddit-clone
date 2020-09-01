@@ -37,12 +37,12 @@ export class Post extends BaseEntity {
   @Field(() => String)
   //you put in types so that when migration occurs, the sql statement ensures the property is of this type
   @CreateDateColumn()
-  createdAt = Date;
+  createdAt: Date;
 
   @Field(() => String)
   //you put in types so that when migration occurs, the sql statement ensures the property is of this type
   @UpdateDateColumn()
-  updatedAt = new Date();
+  updatedAt: Date;
 }
 
 

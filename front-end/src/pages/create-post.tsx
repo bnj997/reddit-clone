@@ -1,17 +1,37 @@
-import React from 'react'
-import { Wrapper } from '../components/Wrapper';
+import React, { useEffect } from 'react'
 import { Formik, Form } from 'formik';
 import { InputField } from '../components/InputField';
 import { Box, Button } from '@chakra-ui/core';
+import { useCreatePostMutation, useGetCurrentUserQuery } from '../generated/graphql';
+import { useRouter } from "next/router";
+import { Layout } from '../components/Layout';
+import { withUrqlClient } from 'next-urql';
+import { createUrqlClient } from '../utils/createUrqlClient';
 
 
 const CreatePost: React.FC<{}> = ({}) => {
+  const [{data, fetching}] = useGetCurrentUserQuery();
+  const router = useRouter();
+
+  //If not loading and you are not logged in, then go to login page immediately
+  useEffect(() => {
+    if (!fetching && !data?.getCurrentUser) {
+      router.replace("/login")
+    }
+  }, [data, router]);
+
+
+  const [, createPost] = useCreatePostMutation()
   return (
-    <Wrapper variant="small">
+    <Layout variant="small">
       <Formik 
         initialValues={{title: '', text: ''}}
         onSubmit={async (values) => {
-          console.log(values);
+          //error is part of error exchange in createUrqlClient
+          const {error} = await createPost({input: values});
+          if (!error) {
+            router.push("/")
+          }
         }}
       >
         {({isSubmitting}) => (
@@ -40,8 +60,8 @@ const CreatePost: React.FC<{}> = ({}) => {
           </Form>
         )}
       </Formik>
-    </Wrapper>
+    </Layout>
   );
 }
 
-export default CreatePost;
+export default withUrqlClient(createUrqlClient)(CreatePost);

@@ -1,6 +1,8 @@
-import { dedupExchange, fetchExchange } from "urql";
+import { dedupExchange, fetchExchange, Exchange } from "urql";
 import { Cache, QueryInput, cacheExchange,  } from "@urql/exchange-graphcache"
 import { LogoutMutation, GetCurrentUserQuery, GetCurrentUserDocument, LoginMutation, RegisterMutation } from "../generated/graphql";
+import { pipe, tap } from "wonka";
+import Router from "next/router";
 
 function betterUpdateQuery<Result, Query>(
   cache: Cache,
@@ -10,6 +12,20 @@ function betterUpdateQuery<Result, Query>(
 ) {
   return cache.updateQuery(qi, (data) => fn(result, data as any) as any);
 }
+
+//allow us to catch all errors
+const errorExchange: Exchange = ({ forward }) => (ops$) => {
+  return pipe(
+    forward(ops$),
+    tap(({ error }) => {
+      if (error?.message.includes("not authenticated")) {
+        //outside of react so using "Router" not const router
+        Router.replace("/login");
+      }
+    })
+  );
+};
+
 
 
 //URQL is a graphql client that can be used to make graphql requests
@@ -76,6 +92,7 @@ export const createUrqlClient = (ssrExchange: any) => ({
         },
       },
     }),
+    errorExchange,
     //determines whether you want to serverside render or not
     ssrExchange,
     //responsible for sending queiry/mutations to graphQL api using getch

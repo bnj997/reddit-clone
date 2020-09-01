@@ -1,15 +1,15 @@
 //Bunch of queiries and mutations used to fetch or update POSTS
 import { Resolver, Query, Int, Arg, Mutation, InputType, Field, Ctx, UseMiddleware } from "type-graphql";
 import { Post } from "../entities/Post";
-import { MyContext } from "src/types";
+import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
 
 @InputType()
 class PostInput {
-  @Field()
-  title: string
-  @Field()
-  text: string
+  @Field(() => String)
+  title: string;
+  @Field(() => String)
+  text: string;
 }
 
 @Resolver()
@@ -47,7 +47,7 @@ export class PostResolver {
   async createPost(
     //"title", () => String  --> represents the graphql type
     //title: stringr --> represents the typescript type
-    @Arg("options", () => String) input: PostInput,
+    @Arg("input", () => PostInput) input: PostInput,
     @Ctx() {req}: MyContext
     ): Promise<Post> {
     return Post.create({
@@ -81,7 +81,7 @@ export class PostResolver {
 
   //Delete Post
   @Mutation(() => Boolean)
-  async deletePost(@Arg("id", () => Int) id: number,   ): Promise<boolean> {
+  async deletePost(@Arg("id", () => Int) id: number): Promise<boolean> {
     await Post.delete(id)
     return true;
   }

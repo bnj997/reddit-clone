@@ -28,11 +28,11 @@ const isAuth_1 = require("../middleware/isAuth");
 let PostInput = class PostInput {
 };
 __decorate([
-    type_graphql_1.Field(),
+    type_graphql_1.Field(() => String),
     __metadata("design:type", String)
 ], PostInput.prototype, "title", void 0);
 __decorate([
-    type_graphql_1.Field(),
+    type_graphql_1.Field(() => String),
     __metadata("design:type", String)
 ], PostInput.prototype, "text", void 0);
 PostInput = __decorate([
@@ -85,7 +85,7 @@ __decorate([
 __decorate([
     type_graphql_1.Mutation(() => Post_1.Post),
     type_graphql_1.UseMiddleware(isAuth_1.isAuth),
-    __param(0, type_graphql_1.Arg("options", () => String)),
+    __param(0, type_graphql_1.Arg("input", () => PostInput)),
     __param(1, type_graphql_1.Ctx()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [PostInput, Object]),
