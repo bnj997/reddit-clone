@@ -28,7 +28,9 @@ const main = async () => {
     migrations: [path.join(__dirname, "./migrations/*")],
     entities: [Post, User]
   })
-  await conn.runMigrations()
+  //await conn.runMigrations()
+
+  //await Post.delete({});
   //CREATES CONNECTION TO DATABASE and initialises with  correct config using the microConfig file
   //This file contains dbName, type of database, username and password to ensure secure connection to database
   //Note: To create new table, go to microconfig table and add in a new entity then run mikro-orm migration:create

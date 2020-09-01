@@ -1,5 +1,5 @@
 //Bunch of queiries and mutations used to fetch or update POSTS
-import { Resolver, Query, Int, Arg, Mutation, InputType, Field, Ctx, UseMiddleware, FieldResolver, Root } from "type-graphql";
+import { Resolver, Query, Int, Arg, Mutation, InputType, Field, Ctx, UseMiddleware, FieldResolver, Root, ObjectType } from "type-graphql";
 import { Post } from "../entities/Post";
 import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
@@ -13,6 +13,15 @@ class PostInput {
   text: string;
 }
 
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts: Post[];
+  @Field(() => Boolean)
+  hasMore: boolean;
+}
+
+
 @Resolver(Post)
 export class PostResolver {
 
@@ -25,12 +34,10 @@ export class PostResolver {
   ) {
     return root.text.slice(0, 50)
   }
-
-
   
   //Get All Posts
   //return type is the Graphql Post type 
-  @Query(() => [Post])
+  @Query(() => [PaginatedPosts])
   //In order to query database, need to access the mikroORM "orm.em" object that was made in index.ts. 
   //This was done via context object called "em"
   //use @Ctx() {em}: MyContext to access this object
@@ -42,21 +49,29 @@ export class PostResolver {
     //cursor dicates that you want posts after this point and dictates how you sort it
     //acts like a condition statement that is met before you fetch the posts based on ordering + number to displau
     @Arg('cursor', () => String, {nullable: true}) cursor: string | null
-  ): Promise<Post[]> {
+  ): Promise<PaginatedPosts> {
     //user inputs what limit they want unless its over 50, in which case we cap it at 50
-    const realLimit = Math.min(50, limit)
+    //eg. user asks for 20 posts, actually fetching 21
+    const realLimit = Math.min(50, limit);
+    const realLimitPlusOne = realLimit + 1;
     const qb = getConnection()
       .getRepository(Post)
       .createQueryBuilder("p")
       .orderBy('"createdAt"', "DESC")
-      .take(realLimit)
+      .take(realLimitPlusOne)
     if (cursor) {
       //if post is newer than selected date, show
       qb.where('"createdAt" < :cursor', {
         cursor: new Date(parseInt(cursor)),
-      }); return qb.getMany()
+      }); 
     }
-    return qb.getMany();
+    const posts = await qb.getMany()
+    return { 
+      //eg. only want to return 20 not 21 posts
+      posts: posts.slice(0, realLimit), 
+      //if we can return 21 posts even though just asked for 20, we know theres more data to load when loadmore pressed again
+      hasMore: posts.length === realLimitPlusOne
+    };
   }
 
   //Get a Single Post
