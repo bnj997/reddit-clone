@@ -13,9 +13,9 @@ import NextLink from 'next/link'
 
 
 
-export const ChangePassword: NextPage<{token: string}> = ({token}) => {
+export const ChangePassword: NextPage = () => {
   const router = useRouter();
-  const [,changePassword] = useChangePasswordMutation()
+  const [, changePassword] = useChangePasswordMutation()
   const [tokenError, setTokenError] = useState(''); 
   return (
     <Wrapper variant="small">
@@ -24,7 +24,7 @@ export const ChangePassword: NextPage<{token: string}> = ({token}) => {
         onSubmit={async (values, {setErrors}) => {
           const response = await changePassword({
             newPassword: values.newPassword, 
-            token,
+            token: typeof router.query.token === "string" ? router.query.token : "",
           });
 
           if (response.data?.changePassword.errors) {
@@ -67,13 +67,6 @@ export const ChangePassword: NextPage<{token: string}> = ({token}) => {
       </Formik>
     </Wrapper>
   );
-}
-
-//Special function from nextjs that allows us to get any query parameters passed into this component
-ChangePassword.getInitialProps = ({query}) => {  
-  return {
-    token: query.token as string
-  }
 }
 
 export default withUrqlClient(createUrqlClient)(ChangePassword);
