@@ -13,6 +13,7 @@ import cors from 'cors'
 import { createConnection } from 'typeorm';
 import { Post } from './entities/Post';
 import { User } from './entities/User';
+import path from "path";
 
 
 
@@ -24,8 +25,10 @@ const main = async () => {
     password: 'postgres',
     logging: true,
     synchronize: true,
+    migrations: [path.join(__dirname, "./migrations/*")],
     entities: [Post, User]
   })
+  await conn.runMigrations()
   //CREATES CONNECTION TO DATABASE and initialises with  correct config using the microConfig file
   //This file contains dbName, type of database, username and password to ensure secure connection to database
   //Note: To create new table, go to microconfig table and add in a new entity then run mikro-orm migration:create

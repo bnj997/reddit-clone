@@ -3,8 +3,7 @@ import { Resolver, Query, Int, Arg, Mutation, InputType, Field, Ctx, UseMiddlewa
 import { Post } from "../entities/Post";
 import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
-import { Connection, getConnection } from "typeorm";
-import { User } from "src/entities/User";
+import { getConnection } from "typeorm";
 
 @InputType()
 class PostInput {
