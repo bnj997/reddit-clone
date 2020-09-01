@@ -1,35 +1,63 @@
-import { NavBar } from "../components/NavBar";
 import { withUrqlClient} from 'next-urql'
 import { createUrqlClient } from "../utils/createUrqlClient";
 import { useGetAllPostsQuery } from "../generated/graphql"
 import { Layout } from "../components/Layout";
 import NextLink from 'next/link'
-import { Stack, Box, Heading, Text } from "@chakra-ui/core";
+import { Stack, Box, Heading, Text, Flex, Link, Button } from "@chakra-ui/core";
+import { useState } from "react";
 
 const Index = () => {
-  const [{data}] = useGetAllPostsQuery({
-    variables: {
-      limit: 10,
-    },
+  const [variables, setVariables] = useState({
+    limit: 10, 
+    //cursor could be null or string
+    cursor: null as null | string,
   });
+  const [{data, fetching}] = useGetAllPostsQuery({
+    variables,
+  });
+
+  if (!fetching && !data) {
+    return (
+      <div>
+        Query seemed to have failed
+      </div>
+    )
+  }
   
   return (
     <Layout>
-      <NextLink href="/create-post">
-        Create Post
-      </NextLink>
-      {!data ? (
+      <Flex align="center">
+        <Heading mb={5}>RedditClone</Heading>
+        <NextLink href="/create-post">
+          <Button variantColor="teal" ml="auto">Create Post</Button>
+        </NextLink>
+      </Flex>
+     
+      {!data && fetching ? (
         <div> Loading...</div>
       ) : (
         <Stack spacing={8}>
-          {data.getAllPosts.map((p) => (
+          {data!.getAllPosts.map((p) => (
             <Box key={p.id} p={5} shadow="md" borderWidth="1px">
               <Heading fontSize="xl">{p.title}</Heading>
-              <Text mt={4}>{p.text.slice(0, 50)}...</Text>
+              <Text mt={4}>{p.textSnippet}...</Text>
             </Box>
           ))}
         </Stack>
       )}
+      {data? (
+        <Flex>
+          <Button onClick={() => {
+            setVariables({
+              limit: variables.limit,
+              //want to get all items after the last item in initial list
+              cursor: data.getAllPosts[data.getAllPosts.length - 1].createdAt,
+            })
+          }} isLoading = {fetching} variantColor="teal" m="auto" my={8}>
+            Load more
+          </Button>
+        </Flex>
+      ) : null}
     </Layout>
   )  
 }

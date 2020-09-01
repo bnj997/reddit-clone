@@ -1,5 +1,5 @@
 //Bunch of queiries and mutations used to fetch or update POSTS
-import { Resolver, Query, Int, Arg, Mutation, InputType, Field, Ctx, UseMiddleware } from "type-graphql";
+import { Resolver, Query, Int, Arg, Mutation, InputType, Field, Ctx, UseMiddleware, FieldResolver, Root } from "type-graphql";
 import { Post } from "../entities/Post";
 import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
@@ -13,8 +13,20 @@ class PostInput {
   text: string;
 }
 
-@Resolver()
+@Resolver(Post)
 export class PostResolver {
+
+  //Will be called everytime we get post object
+  //Aim is just to convert the text into a snippet
+  //ensure not pulling the entire text body from database
+  @FieldResolver(() => String)
+  textSnippet(
+    @Root() root: Post
+  ) {
+    return root.text.slice(0, 50)
+  }
+
+
   
   //Get All Posts
   //return type is the Graphql Post type 
