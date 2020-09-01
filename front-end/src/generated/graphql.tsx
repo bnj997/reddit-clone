@@ -244,7 +244,7 @@ export type GetAllPostsQuery = (
   { __typename?: 'Query' }
   & { getAllPosts: Array<(
     { __typename?: 'Post' }
-    & Pick<Post, 'id' | 'createdAt' | 'updatedAt' | 'title'>
+    & Pick<Post, 'id' | 'createdAt' | 'updatedAt' | 'title' | 'text'>
   )> }
 );
 
@@ -364,6 +364,7 @@ export const GetAllPostsDocument = gql`
     createdAt
     updatedAt
     title
+    text
   }
 }
     `;

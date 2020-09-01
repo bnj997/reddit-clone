@@ -4,6 +4,7 @@ import { createUrqlClient } from "../utils/createUrqlClient";
 import { useGetAllPostsQuery } from "../generated/graphql"
 import { Layout } from "../components/Layout";
 import NextLink from 'next/link'
+import { Stack, Box, Heading, Text } from "@chakra-ui/core";
 
 const Index = () => {
   const [{data}] = useGetAllPostsQuery({
@@ -20,7 +21,14 @@ const Index = () => {
       {!data ? (
         <div> Loading...</div>
       ) : (
-        data.getAllPosts.map((p) => <div key={p.id}> {p.title}</div>)
+        <Stack spacing={8}>
+          {data.getAllPosts.map((p) => (
+            <Box key={p.id} p={5} shadow="md" borderWidth="1px">
+              <Heading fontSize="xl">{p.title}</Heading>
+              <Text mt={4}>{p.text.slice(0, 50)}...</Text>
+            </Box>
+          ))}
+        </Stack>
       )}
     </Layout>
   )  
