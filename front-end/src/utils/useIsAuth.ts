@@ -8,7 +8,9 @@ export const useIsAuth = () => {
   //If not loading and you are not logged in, then go to login page immediately
   useEffect(() => {
     if (!fetching && !data?.getCurrentUser) {
-      router.replace("/login")
+      //the router.pathname keeps reference to previous page so then once logged in, can go back to it
+      //basically goes to the login page and appends pathname to URL so once logged in, login function can go back to that pathname
+      router.replace("/login?next=" + router.pathname);
     }
   }, [data, router]);
 }

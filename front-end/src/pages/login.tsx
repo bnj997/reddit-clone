@@ -24,7 +24,13 @@ const Login: React.FC<{}> = ({}) => {
           if (response.data?.loginUser.errors) {
             setErrors(toErrorMap(response.data.loginUser.errors))
           } else if (response.data?.loginUser.user) {
-            router.push('/')
+            //once logged in, check if the query in URL corresponds to a page and go there once done
+            if (typeof router.query.next === "string") {
+              router.push(router.query.next);
+            } else {
+              // if no query, just go back to home page
+              router.push("/");
+            }
           }
         }}
       >
