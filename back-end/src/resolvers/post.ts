@@ -3,6 +3,8 @@ import { Resolver, Query, Int, Arg, Mutation, InputType, Field, Ctx, UseMiddlewa
 import { Post } from "../entities/Post";
 import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
+import { Connection, getConnection } from "typeorm";
+import { User } from "src/entities/User";
 
 @InputType()
 class PostInput {
@@ -24,8 +26,26 @@ export class PostResolver {
   //To ensure that "em" is of correct context type, we define it as of type MyContext (see types.ts for more description)
   //return type of this "find" method is the typeScript "Post" type
   //NOTE: you may see that we are type checking both the GraphQL Post type and typescript Post type. 
-  getAllPosts(): Promise<Post[]> {
-    return Post.find()
+  async getAllPosts(
+    @Arg('limit', () => Int) limit: number,
+    //cursor dicates that you want posts after this point and dictates how you sort it
+    //acts like a condition statement that is met before you fetch the posts based on ordering + number to displau
+    @Arg('cursor', () => String, {nullable: true}) cursor: string | null
+  ): Promise<Post[]> {
+    //user inputs what limit they want unless its over 50, in which case we cap it at 50
+    const realLimit = Math.min(50, limit)
+    const qb = getConnection()
+      .getRepository(Post)
+      .createQueryBuilder("p")
+      .orderBy('"createdAt"', "DESC")
+      .take(realLimit)
+    if (cursor) {
+      //if post is newer than selected date, show
+      qb.where('"createdAt" < :cursor', {
+        cursor: new Date(parseInt(cursor)),
+      }); return qb.getMany()
+    }
+    return qb.getMany();
   }
 
   //Get a Single Post

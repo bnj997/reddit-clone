@@ -1,5 +1,8 @@
-query getAllPosts {
-  getAllPosts {
+query getAllPosts($limit: Int!, $cursor: String) {
+  getAllPosts(
+    cursor: $cursor,
+    limit: $limit
+  ) {
     id
     createdAt
     updatedAt

@@ -20,6 +20,12 @@ export type Query = {
 };
 
 
+export type QueryGetAllPostsArgs = {
+  cursor?: Maybe<Scalars['String']>;
+  limit: Scalars['Int'];
+};
+
+
 export type QueryGetASinglePostArgs = {
   id: Scalars['Int'];
 };
@@ -228,7 +234,10 @@ export type GetCurrentUserQuery = (
   )> }
 );
 
-export type GetAllPostsQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetAllPostsQueryVariables = Exact<{
+  limit: Scalars['Int'];
+  cursor?: Maybe<Scalars['String']>;
+}>;
 
 
 export type GetAllPostsQuery = (
@@ -349,8 +358,8 @@ export function useGetCurrentUserQuery(options: Omit<Urql.UseQueryArgs<GetCurren
   return Urql.useQuery<GetCurrentUserQuery>({ query: GetCurrentUserDocument, ...options });
 };
 export const GetAllPostsDocument = gql`
-    query getAllPosts {
-  getAllPosts {
+    query getAllPosts($limit: Int!, $cursor: String) {
+  getAllPosts(cursor: $cursor, limit: $limit) {
     id
     createdAt
     updatedAt
