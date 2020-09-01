@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Formik, Form } from 'formik';
 import { InputField } from '../components/InputField';
 import { Box, Button } from '@chakra-ui/core';
@@ -7,20 +7,12 @@ import { useRouter } from "next/router";
 import { Layout } from '../components/Layout';
 import { withUrqlClient } from 'next-urql';
 import { createUrqlClient } from '../utils/createUrqlClient';
+import { useIsAuth } from '../utils/useIsAuth';
 
 
 const CreatePost: React.FC<{}> = ({}) => {
-  const [{data, fetching}] = useGetCurrentUserQuery();
   const router = useRouter();
-
-  //If not loading and you are not logged in, then go to login page immediately
-  useEffect(() => {
-    if (!fetching && !data?.getCurrentUser) {
-      router.replace("/login")
-    }
-  }, [data, router]);
-
-
+  useIsAuth();
   const [, createPost] = useCreatePostMutation()
   return (
     <Layout variant="small">
