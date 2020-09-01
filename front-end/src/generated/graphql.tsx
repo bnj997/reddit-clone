@@ -14,7 +14,7 @@ export type Scalars = {
 
 export type Query = {
   __typename?: 'Query';
-  getAllPosts: Array<Post>;
+  getAllPosts: PaginatedPosts;
   getASinglePost?: Maybe<Post>;
   getCurrentUser?: Maybe<User>;
 };
@@ -28,6 +28,12 @@ export type QueryGetAllPostsArgs = {
 
 export type QueryGetASinglePostArgs = {
   id: Scalars['Int'];
+};
+
+export type PaginatedPosts = {
+  __typename?: 'PaginatedPosts';
+  posts: Array<Post>;
+  hasMore: Scalars['Boolean'];
 };
 
 export type Post = {
@@ -243,10 +249,14 @@ export type GetAllPostsQueryVariables = Exact<{
 
 export type GetAllPostsQuery = (
   { __typename?: 'Query' }
-  & { getAllPosts: Array<(
-    { __typename?: 'Post' }
-    & Pick<Post, 'id' | 'createdAt' | 'updatedAt' | 'title' | 'textSnippet'>
-  )> }
+  & { getAllPosts: (
+    { __typename?: 'PaginatedPosts' }
+    & Pick<PaginatedPosts, 'hasMore'>
+    & { posts: Array<(
+      { __typename?: 'Post' }
+      & Pick<Post, 'id' | 'createdAt' | 'updatedAt' | 'title' | 'textSnippet'>
+    )> }
+  ) }
 );
 
 export const RegularErrorFragmentDoc = gql`
@@ -361,11 +371,14 @@ export function useGetCurrentUserQuery(options: Omit<Urql.UseQueryArgs<GetCurren
 export const GetAllPostsDocument = gql`
     query getAllPosts($limit: Int!, $cursor: String) {
   getAllPosts(cursor: $cursor, limit: $limit) {
-    id
-    createdAt
-    updatedAt
-    title
-    textSnippet
+    hasMore
+    posts {
+      id
+      createdAt
+      updatedAt
+      title
+      textSnippet
+    }
   }
 }
     `;

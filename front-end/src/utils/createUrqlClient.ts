@@ -31,11 +31,12 @@ const cursorPagination = (): Resolver => {
   return (_parent, fieldArgs, cache, info) => {
     const { parentKey: entityKey, fieldName } = info;
    
-    //gets all the queires that is currently in the cache
+    //gets all the queriees that is currently in the cache
     //but there could be other queries we dont care about
     const allFields = cache.inspectFields(entityKey);
 
     //Make sure we are getting field info from the query of choice
+    //eg. In this case, get all the posts we already ran
     const fieldInfos = allFields.filter(info => info.fieldName === fieldName);
     const size = fieldInfos.length;
     //return undefined if no data
@@ -45,18 +46,33 @@ const cursorPagination = (): Resolver => {
 
     //stores the results the cache knows and compile a list
     const fieldKey =  `${fieldName}(${stringifyVariables(fieldArgs)})`;
-    const isItInCache = cache.resolveFieldByKey(entityKey, fieldKey);
+    const isItInCache = cache.resolve(
+      cache.resolveFieldByKey(entityKey, fieldKey) as string,
+      "posts"
+    );
     //if not in cache, we get a partial return
     info.partial = !isItInCache;
-    
+    let hasMore = true;
     //when load more, we want to combile the data
     const results: string[] = [];
+    
     fieldInfos.forEach(fi => {
-      const data = cache.resolveFieldByKey(entityKey, fi.fieldKey) as string[];
-      results.push(...data);
+      const key = cache.resolveFieldByKey(entityKey, fi.fieldKey) as string;
+      const posts = cache.resolve(key, "posts") as string[];
+      const _hasMore = cache.resolve(key, "hasMore");
+      //look through cache of all the paginated queries
+      //if any of them has hasmore false, then hasmore should equal false
+      if (!_hasMore) {
+        hasMore = _hasMore as boolean;
+      }
+      results.push(...posts);
     })
 
-    return results;
+    return {
+      __typename: "PaginatedPosts",
+      hasMore,
+      posts: results
+    };
     
 
 
@@ -132,6 +148,9 @@ export const createUrqlClient = (ssrExchange: any) => ({
     //Need to update the cache when logging in or logging out to ensure navbar updates apropriately 
     //Need custom updates to work and need to include the mutations that will include the update
     cacheExchange({
+      keys: {
+        PaginatedPosts: () => null
+      },
       //run whenever query for get all posts are run
       //want to run cursor pagination when we get all posts
       resolvers: {

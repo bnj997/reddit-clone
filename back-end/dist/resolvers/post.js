@@ -46,7 +46,7 @@ __decorate([
     __metadata("design:type", Array)
 ], PaginatedPosts.prototype, "posts", void 0);
 __decorate([
-    type_graphql_1.Field(() => Boolean),
+    type_graphql_1.Field(),
     __metadata("design:type", Boolean)
 ], PaginatedPosts.prototype, "hasMore", void 0);
 PaginatedPosts = __decorate([
@@ -112,7 +112,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PostResolver.prototype, "textSnippet", null);
 __decorate([
-    type_graphql_1.Query(() => [PaginatedPosts]),
+    type_graphql_1.Query(() => PaginatedPosts),
     __param(0, type_graphql_1.Arg('limit', () => type_graphql_1.Int)),
     __param(1, type_graphql_1.Arg('cursor', () => String, { nullable: true })),
     __metadata("design:type", Function),

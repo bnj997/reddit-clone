@@ -37,7 +37,7 @@ const Index = () => {
         <div> Loading...</div>
       ) : (
         <Stack spacing={8}>
-          {data!.getAllPosts.map((p) => (
+          {data!.getAllPosts.posts.map((p) => (
             <Box key={p.id} p={5} shadow="md" borderWidth="1px">
               <Heading fontSize="xl">{p.title}</Heading>
               <Text mt={4}>{p.textSnippet}...</Text>
@@ -45,19 +45,25 @@ const Index = () => {
           ))}
         </Stack>
       )}
-      {data? (
+      {data && data.getAllPosts.hasMore ? (
         <Flex>
           <Button onClick={() => {
             setVariables({
               limit: variables.limit,
               //want to get all items after the last item in initial list
-              cursor: data.getAllPosts[data.getAllPosts.length - 1].createdAt,
+              cursor: data.getAllPosts.posts[data.getAllPosts.posts.length - 1].createdAt,
             })
           }} isLoading = {fetching} variantColor="teal" m="auto" my={8}>
             Load more
           </Button>
         </Flex>
-      ) : null}
+      ) : (
+        <Flex>
+          <Heading m="auto" my={8}>
+            You've reached the end!
+          </Heading>
+        </Flex>
+      )}
     </Layout>
   )  
 }

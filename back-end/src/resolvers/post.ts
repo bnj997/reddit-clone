@@ -17,7 +17,7 @@ class PostInput {
 class PaginatedPosts {
   @Field(() => [Post])
   posts: Post[];
-  @Field(() => Boolean)
+  @Field()
   hasMore: boolean;
 }
 
@@ -37,7 +37,7 @@ export class PostResolver {
   
   //Get All Posts
   //return type is the Graphql Post type 
-  @Query(() => [PaginatedPosts])
+  @Query(() => PaginatedPosts)
   //In order to query database, need to access the mikroORM "orm.em" object that was made in index.ts. 
   //This was done via context object called "em"
   //use @Ctx() {em}: MyContext to access this object
